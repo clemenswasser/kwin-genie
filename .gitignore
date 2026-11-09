@@ -1,0 +1,6 @@
+/build/
+/build-*/
+/tests/*.ppm
+__pycache__/
+*.o
+/.clice/

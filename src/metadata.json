@@ -1,0 +1,12 @@
+{
+    "KPlugin": {
+        "Category": "Appearance",
+        "Description": "macOS-style genie effect when minimizing windows, reconstructed from the macOS Dock",
+        "EnabledByDefault": false,
+        "Name": "Genie",
+        "Version": "1.0"
+    },
+    "org.kde.kwin.effect": {
+        "exclusiveGroup": "minimize"
+    }
+}
