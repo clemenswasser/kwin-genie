@@ -3,7 +3,7 @@
 Native KWin effect plugin reproducing the macOS Tahoe genie minimize/restore animation. It appears
 under **System Settings → Animations → Window minimize**.
 
-![Genie minimize effect](docs/genie.gif)
+![Genie minimize effect](docs/genie-demo.gif)
 
 The mesh is a bit-exact port of the Dock's genie routine, and rendering matches WindowServer's
 per-cell projective texture mapping. Timing is 0.5 s; hold **Shift** for 10× slow motion.
