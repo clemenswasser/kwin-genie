@@ -358,9 +358,30 @@ GenieEffect::Target GenieEffect::computeTarget(const RectF &frame, const RectF &
 
     Target t;
     if (horizontalEdge) {
-        t.direction = (dTop < dBottom) ? ((wc.y() >= c.y()) ? GENIE_DIR_UP : GENIE_DIR_DOWN) : ((wc.y() <= c.y()) ? GENIE_DIR_DOWN : GENIE_DIR_UP);
+        if (havePanel) {
+            // Match the Dock: use the window edge against the panel edge, not the
+            // window centre. A window that extends far below a bottom panel has
+            // its centre below the icon even though the icon is still below it.
+            const bool panelAtBottom = dBottom <= dTop;
+            if (panelAtBottom) {
+                t.direction = (frame.y() <= panelGeometry.y()) ? GENIE_DIR_DOWN : GENIE_DIR_UP;
+            } else {
+                t.direction = (frame.y() + frame.height() >= panelGeometry.y() + panelGeometry.height()) ? GENIE_DIR_UP : GENIE_DIR_DOWN;
+            }
+        } else {
+            t.direction = (dTop < dBottom) ? ((wc.y() >= c.y()) ? GENIE_DIR_UP : GENIE_DIR_DOWN) : ((wc.y() <= c.y()) ? GENIE_DIR_DOWN : GENIE_DIR_UP);
+        }
     } else {
-        t.direction = (dLeft <= dRight) ? ((wc.x() >= c.x()) ? GENIE_DIR_LEFT : GENIE_DIR_RIGHT) : ((wc.x() <= c.x()) ? GENIE_DIR_RIGHT : GENIE_DIR_LEFT);
+        if (havePanel) {
+            const bool panelAtLeft = dLeft <= dRight;
+            if (panelAtLeft) {
+                t.direction = (frame.x() + frame.width() <= panelGeometry.x()) ? GENIE_DIR_RIGHT : GENIE_DIR_LEFT;
+            } else {
+                t.direction = (frame.x() >= panelGeometry.x() + panelGeometry.width()) ? GENIE_DIR_LEFT : GENIE_DIR_RIGHT;
+            }
+        } else {
+            t.direction = (dLeft <= dRight) ? ((wc.x() >= c.x()) ? GENIE_DIR_LEFT : GENIE_DIR_RIGHT) : ((wc.x() <= c.x()) ? GENIE_DIR_RIGHT : GENIE_DIR_LEFT);
+        }
     }
 
     const bool horizontal = horizontalEdge;
