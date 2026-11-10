@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2026 Clemens Wasser
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "genieeffect.h"
+#include "genie_timeline.h"
 
 #include "core/output.h"
 #include "core/pixelgrid.h"
@@ -232,11 +233,8 @@ void GenieEffect::startAnimation(EffectWindow *w, bool minimizing)
         animation.timeLine.toggleDirection();
     } else {
         animation.visibleRef = EffectWindowVisibleRef(w, EffectWindow::PAINT_DISABLED_BY_MINIMIZE);
-        animation.timeLine.setDirection(minimizing ? TimeLine::Forward : TimeLine::Backward);
-
         const bool slow = input() && (input()->keyboardModifiers() & Qt::ShiftModifier);
-        animation.timeLine.setDuration(slow ? m_duration * 10 : m_duration);
-        animation.timeLine.setEasingCurve(QEasingCurve::Linear);
+        startGenieTimeline(animation.timeLine, minimizing, m_duration, slow);
     }
     redirect(w);
     if (GLShader *shader = projectiveShader()) {

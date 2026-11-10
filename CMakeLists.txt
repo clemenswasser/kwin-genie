@@ -45,6 +45,7 @@ if(BUILD_TESTING)
         COMMAND genie_shadow_test ${CMAKE_CURRENT_SOURCE_DIR}/tests/shadow_frames.txt)
 
     add_executable(genie_timeline_test tests/timeline_test.cpp)
+    target_include_directories(genie_timeline_test PRIVATE src)
     target_link_libraries(genie_timeline_test PRIVATE KWin::kwin Qt6::Core)
     add_test(NAME genie_timeline COMMAND genie_timeline_test)
 

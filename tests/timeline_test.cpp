@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 /* Checks the KWin TimeLine contract used by the minimize/restore path. */
 #include "effect/timeline.h"
+#include "genie_timeline.h"
 
 #include <QCoreApplication>
 #include <QEasingCurve>
@@ -64,6 +65,22 @@ int main(int argc, char **argv)
     check(tl.value(), 0.25, "toggle back keeps progress");
     tl.setElapsed(500ms);
     check(tl.value(), 1.0, "forward after toggle");
+
+    // A completed animation can still be in the effect's held-frames window.
+    // Starting the next animation must reset the timeline, not just change its
+    // direction, otherwise the done flag survives and the animation is skipped.
+    TimeLine restarted(500ms, TimeLine::Forward);
+    restarted.setElapsed(500ms);
+    startGenieTimeline(restarted, false, 500ms, false);
+    check(restarted.value(), 1.0, "restart after done starts minimized");
+    if (restarted.done()) {
+        std::fprintf(stderr, "restart after done: timeline is still done\n");
+        ++failures;
+    }
+    restarted.setElapsed(250ms);
+    check(restarted.value(), 0.5, "restart after done runs backwards");
+    restarted.setElapsed(500ms);
+    check(restarted.value(), 0.0, "restart after done ends restored");
 
     if (failures == 0) {
         std::printf("timeline: forward/backward/toggle contract ok\n");
