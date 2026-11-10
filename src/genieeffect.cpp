@@ -1,4 +1,7 @@
+// SPDX-FileCopyrightText: 2026 Clemens Wasser
+// SPDX-License-Identifier: GPL-2.0-or-later
 #include "genieeffect.h"
+#include "genieconfig.h"
 
 #include "core/output.h"
 #include "core/pixelgrid.h"
@@ -127,7 +130,9 @@ GenieEffect::GenieEffect()
         m_debugPanel = RectF(panel[0].toDouble(), panel[1].toDouble(), panel[2].toDouble(), panel[3].toDouble());
     }
     m_debugDump = qEnvironmentVariable("GENIE_DEBUG_DUMP");
-    m_exactQuality = qEnvironmentVariable("GENIE_QUALITY") == QLatin1String("exact");
+    if (qEnvironmentVariableIsSet("GENIE_QUALITY")) {
+        m_exactQuality = qEnvironmentVariable("GENIE_QUALITY") == QLatin1String("exact");
+    }
     bool meshPxOk = false;
     const double meshPx = qEnvironmentVariable("GENIE_MESH_PX").toDouble(&meshPxOk);
     if (meshPxOk) {
@@ -144,7 +149,10 @@ bool GenieEffect::supported()
 
 void GenieEffect::reconfigure(ReconfigureFlags)
 {
-    m_duration = animationTime(std::chrono::milliseconds(int(GENIE_DURATION * 1000)));
+    GenieConfig::self()->load();
+    m_duration = animationTime(std::chrono::milliseconds(GenieConfig::duration()));
+    m_meshPx = GenieConfig::meshPx();
+    m_exactQuality = GenieConfig::exact();
 }
 
 void GenieEffect::prePaintScreen(ScreenPrePaintData &data)

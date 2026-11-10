@@ -3,10 +3,12 @@
         "Category": "Appearance",
         "Description": "macOS-style genie effect when minimizing windows, reconstructed from the macOS Dock",
         "EnabledByDefault": false,
+        "License": "GPL-2.0-or-later",
         "Name": "Genie",
         "Version": "1.0"
     },
     "org.kde.kwin.effect": {
         "exclusiveGroup": "minimize"
-    }
+    },
+    "X-KDE-ConfigModule": "kwin_genie_config"
 }
