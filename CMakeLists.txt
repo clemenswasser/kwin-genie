@@ -68,4 +68,8 @@ if(BUILD_TESTING)
     add_test(NAME genie_autohide_matrix
         COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests/autohide_matrix.sh)
     set_tests_properties(genie_autohide_matrix PROPERTIES TIMEOUT 300)
+
+    add_test(NAME genie_synth_matrix
+        COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests/synth_matrix.sh)
+    set_tests_properties(genie_synth_matrix PROPERTIES TIMEOUT 300)
 endif()

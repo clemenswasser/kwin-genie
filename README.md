@@ -71,8 +71,10 @@ ctest --test-dir build --output-on-failure
   panel/icon.
 - `genie_scale_matrix` checks logical target coordinates at fractional scale.
 - `genie_autohide_matrix` checks that auto-hidden panels keep the target on the
-  visible screen edge. These run an isolated headless KWin; they do not affect the
-  running session.
+  visible screen edge.
+- `genie_synth_matrix` checks the fallback target when a window has no
+  task-manager icon geometry. These run an isolated headless KWin; they do not
+  affect the running session.
 
 ## Performance benchmark
 
