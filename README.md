@@ -58,3 +58,17 @@ ctest --test-dir build --output-on-failure
 - `genie_direction_matrix` checks direction selection for normal windows and for
   windows that extend far below/above a panel. These run an isolated headless KWin;
   they do not affect the running session.
+
+## Performance benchmark
+
+`tools/benchmark_gpu.sh` runs an isolated headless KWin at 3840×2160 with a
+Dolphin-sized window and collects KWin's render-time CSV. `tools/benchmark_parse.py`
+prints the per-density medians:
+
+```sh
+tools/benchmark_gpu.sh --reps 5 --p 0.5
+tools/benchmark_parse.py /tmp/genie-benchmark
+```
+
+Use `--p 0.1,0.5,0.9` for the full animation and `--sizes 8,12,16,24,32` to compare
+mesh densities. This is a manual, GPU-specific benchmark, not part of CTest.
