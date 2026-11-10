@@ -425,6 +425,14 @@ GenieEffect::Target GenieEffect::computeTarget(const RectF &frame, const RectF &
             tileCenter.setY(icon.y() + side / 2);
         }
     }
+    // An auto-hidden panel lives just outside the output. Keep the target on
+    // the visible screen edge instead of animating the window off-screen.
+    const double minX = screen.x() + side / 2;
+    const double maxX = screen.x() + screen.width() - side / 2;
+    const double minY = screen.y() + side / 2;
+    const double maxY = screen.y() + screen.height() - side / 2;
+    tileCenter.setX(std::clamp(tileCenter.x(), std::min(minX, maxX), std::max(minX, maxX)));
+    tileCenter.setY(std::clamp(tileCenter.y(), std::min(minY, maxY), std::max(minY, maxY)));
     t.tile = genie_box{float(tileCenter.x() - side / 2), float(tileCenter.y() - side / 2), float(tileCenter.x() + side / 2), float(tileCenter.y() + side / 2)};
     return t;
 }
