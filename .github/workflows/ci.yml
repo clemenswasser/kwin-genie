@@ -32,4 +32,4 @@ jobs:
 
       - name: Test
         # The matrix tests need a running KWin/OpenGL compositor; run them locally.
-        run: ctest --test-dir build --output-on-failure -E 'genie_(target|direction|multioutput|scale|autohide)_matrix'
+        run: ctest --test-dir build --output-on-failure -E 'genie_(target|direction|multioutput|scale|autohide|synth)_matrix'
