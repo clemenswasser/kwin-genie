@@ -56,4 +56,16 @@ if(BUILD_TESTING)
     add_test(NAME genie_direction_matrix
         COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests/direction_matrix.sh)
     set_tests_properties(genie_direction_matrix PROPERTIES TIMEOUT 300)
+
+    add_test(NAME genie_multioutput_matrix
+        COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests/multioutput_matrix.sh)
+    set_tests_properties(genie_multioutput_matrix PROPERTIES TIMEOUT 300)
+
+    add_test(NAME genie_scale_matrix
+        COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests/scale_matrix.sh)
+    set_tests_properties(genie_scale_matrix PROPERTIES TIMEOUT 300)
+
+    add_test(NAME genie_autohide_matrix
+        COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests/autohide_matrix.sh)
+    set_tests_properties(genie_autohide_matrix PROPERTIES TIMEOUT 300)
 endif()

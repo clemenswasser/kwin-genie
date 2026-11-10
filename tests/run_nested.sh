@@ -5,6 +5,7 @@
 set -u
 here=$(cd "$(dirname "$0")/.." && pwd)
 out=$(realpath -m "$1"); p=$2; icon=${3:-}; size=${4:-1280x800}; scale=${5:-1}
+outputs=${GENIE_TEST_OUTPUTS:-1}
 tmp=$(mktemp -d "${TMPDIR:-/tmp}/kwin-genie.XXXXXX")
 mkdir -p "$tmp/config" "$tmp/runtime"; chmod 700 "$tmp/runtime"
 cat > "$tmp/config/kwinrc" <<CFG
@@ -37,14 +38,19 @@ fi
 rm -f "$out" "$out.json"
 XDG_CONFIG_HOME="$tmp/config" XDG_RUNTIME_DIR="$tmp/runtime" timeout 40 dbus-run-session -- bash -c "
   KWIN_EFFECTS_FORCE_ANIMATIONS=1 QT_FORCE_STDERR_LOGGING=1 QT_PLUGIN_PATH='$here/build/bin':/usr/lib64/qt6/plugins GENIE_DEBUG_PROGRESS='$p' GENIE_DEBUG_DUMP='$out' GENIE_DEBUG_ICON='$icon' \
-    KWIN_COMPOSE=O2ES kwin_wayland --virtual --width ${size%x*} --height ${size#*x} --socket wayland-genie > '$tmp/kwin.log' 2>&1 &
+    KWIN_COMPOSE=O2ES kwin_wayland --virtual --output-count '$outputs' --width ${size%x*} --height ${size#*x} --socket wayland-genie > '$tmp/kwin.log' 2>&1 &
   kwin=\$!
   for i in \$(seq 50); do [ -S '$tmp/runtime/wayland-genie' ] && break; sleep 0.1; done
   if [ -n '$geom' ] && [ -n '$qdbus_cmd' ]; then
     for i in \$(seq 50); do '$qdbus_cmd' org.kde.KWin /Scripting org.kde.kwin.Scripting.loadScript '$tmp/place.js' place >/dev/null 2>&1 && break; sleep 0.1; done
     '$qdbus_cmd' org.kde.KWin /Scripting org.kde.kwin.Scripting.start >/dev/null 2>&1 || true
   fi
-  if [ '$scale' != 1 ]; then WAYLAND_DISPLAY=wayland-genie kscreen-doctor output.1.scale.$scale > '$tmp/kscreen.log' 2>&1; sleep 0.5; fi
+  if [ '$scale' != 1 ]; then
+    for i in \$(seq 1 $outputs); do
+      WAYLAND_DISPLAY=wayland-genie kscreen-doctor output.\$i.scale.$scale > '$tmp/kscreen.'\$i'.log' 2>&1
+    done
+    sleep 0.5
+  fi
   WAYLAND_DISPLAY=wayland-genie QT_QPA_PLATFORM=wayland '$here/build/bin/genie_test_client' '$here/tests/pattern.png' 1200 ${GENIE_TEST_BG:-} > '$tmp/client.log' 2>&1 &
   client=\$!
   for i in \$(seq 100); do [ -f '$out' ] && break; sleep 0.1; done

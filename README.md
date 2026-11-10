@@ -58,8 +58,13 @@ ctest --test-dir build --output-on-failure
 - `genie_target_matrix` checks the target position, size and direction for bottom,
   top, left, right and wide-label panels.
 - `genie_direction_matrix` checks direction selection for normal windows and for
-  windows that extend far below/above a panel. These run an isolated headless KWin;
-  they do not affect the running session.
+  windows that extend far below/above a panel.
+- `genie_multioutput_matrix` checks that targets land on the output containing the
+  panel/icon.
+- `genie_scale_matrix` checks logical target coordinates at fractional scale.
+- `genie_autohide_matrix` checks that auto-hidden panels keep the target on the
+  visible screen edge. These run an isolated headless KWin; they do not affect the
+  running session.
 
 ## Performance benchmark
 
