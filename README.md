@@ -5,6 +5,8 @@ under **System Settings → Animations → Window minimize**.
 
 ![Genie minimize effect](docs/genie-demo.gif)
 
+![Genie funnel](docs/genie-screenshot.png)
+
 The mesh generator is a bit-exact port of the Dock's genie routine, and rendering matches
 WindowServer's per-cell projective texture mapping. By default the funnel is sampled densely enough
 to avoid visible facets; set `GENIE_QUALITY=exact` for the original Dock mesh. Timing is 0.5 s;
@@ -33,6 +35,8 @@ but costs about 0.9 ms more per frame, while 16 px is slightly cheaper and 24 px
 closer to the exact mesh. The test/benchmark harness can override the density with `GENIE_MESH_PX`;
 `GENIE_QUALITY=exact` selects the bit-identical Dock mesh for comparison. Normal users do not need
 either override.
+
+![Exact Dock mesh vs 12 px smooth mesh](docs/mesh-quality.png)
 
 ## Timing
 
