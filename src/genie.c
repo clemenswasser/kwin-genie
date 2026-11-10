@@ -80,6 +80,8 @@ int genie_build_mesh_ex(float p, genie_rect W, genie_box T, int dir, const genie
 
     const double wx = W.x, wy = W.y, ww = W.w, wh = W.h;
     const double tx = T.x0, ty = T.y0, tw = (double)(T.x1 - T.x0), th = (double)(T.y1 - T.y0);
+    if (ww <= 0.0 || wh <= 0.0 || T.x1 == T.x0 || T.y1 == T.y0)
+        return -1;
     double L0, R0, D = 0.0, A, K, E, S0, F;
     switch (dir) {
     case GENIE_DIR_UP:
@@ -129,6 +131,11 @@ int genie_build_mesh_ex(float p, genie_rect W, genie_box T, int dir, const genie
     default:
         return -1;
     }
+    // The recovered Dock switches to its scale effect for very small windows;
+    // below this travel the logarithmic phase length is zero and the genie
+    // math would divide by zero.
+    if (fabs(A) < 5.0)
+        return -1;
     const int toward_plus = (dir & ~1) == 2;
 
     double gap = fabs(A - K);
@@ -142,6 +149,8 @@ int genie_build_mesh_ex(float p, genie_rect W, genie_box T, int dir, const genie
     double a = (acos(1.0 - (x + x)) / genie_pi_d) * n2;
     double shift = (a < n1) ? n1 - a : 0.0;
     double T1 = (n1 <= a) ? a : n1;
+    if (n2 < 1.0 || T1 <= 0.0)
+        return -1;
     double t = (double)p * (n2 + shift);
     double t1 = (t <= T1) ? t : T1;
     if (t < 0.0)
@@ -157,6 +166,8 @@ int genie_build_mesh_ex(float p, genie_rect W, genie_box T, int dir, const genie
     double L = L0 * e1, R = R0 * e1;
     double base = e1 * D + S0;
     int len_i = (int)(A + 0.5);
+    if (len_i == 0)
+        return -1;
     double lead = base + A * e2;
     double trail = K + lead;
     double trail_c = trail;

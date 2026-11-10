@@ -148,6 +148,45 @@ static int test_smooth_quality(void)
     return failures;
 }
 
+static int test_degenerate(void)
+{
+    int failures = 0;
+    genie_mesh mesh;
+    const genie_box target = {200, 700, 240, 740};
+    const genie_rect normal = {300, 100, 640, 400};
+
+    const genie_rect tiny = {100, 100, 100, 1};
+    const genie_box tiny_target = {100, 101, 200, 102};
+    if (genie_build_mesh(0.5f, tiny, tiny_target, GENIE_DIR_DOWN, &mesh) != -1) {
+        fprintf(stderr, "tiny window: expected a rejected mesh\n");
+        ++failures;
+    }
+
+    const genie_rect zero_width = {100, 100, 0, 100};
+    if (genie_build_mesh(0.5f, zero_width, target, GENIE_DIR_DOWN, &mesh) != -1) {
+        fprintf(stderr, "zero-width window: expected a rejected mesh\n");
+        ++failures;
+    }
+
+    const genie_box zero_target = {200, 700, 200, 740};
+    if (genie_build_mesh(0.5f, normal, zero_target, GENIE_DIR_DOWN, &mesh) != -1) {
+        fprintf(stderr, "zero-width target: expected a rejected mesh\n");
+        ++failures;
+    }
+
+    const genie_quality q = {8.0, 0.0, 0.0, 4096, GENIE_MAX_ROWS};
+    const genie_rect huge = {0, 0, 8000, 4000};
+    const genie_box huge_target = {100, 100, 141, 129};
+    if (genie_build_mesh_ex(0.5f, huge, huge_target, GENIE_DIR_DOWN, &q, &mesh) != 0) {
+        fprintf(stderr, "huge window: build failed\n");
+        ++failures;
+    } else if (mesh.rows > GENIE_MAX_ROWS || !check_finite(&mesh, "huge window")) {
+        ++failures;
+    }
+
+    return failures;
+}
+
 static int test_target_rect(void)
 {
     int failures = 0;
@@ -281,8 +320,9 @@ int main(int argc, char **argv)
     }
     failures += test_target_rect();
     failures += test_smooth_quality();
+    failures += test_degenerate();
     if (failures == 0) {
-        printf("mesh: %zu golden frames, overlap invariants, target rect and smooth quality ok\n",
+        printf("mesh: %zu golden frames, overlap invariants, target rect, smooth quality and degenerate cases ok\n",
                sizeof(golden) / sizeof(golden[0]));
     }
     return failures == 0 ? 0 : 1;
