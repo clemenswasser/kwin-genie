@@ -27,10 +27,12 @@ file name.
 
 ## Mesh quality
 
-By default the funnel is subdivided to roughly 8 device pixels. This avoids visible facets on
-large or HiDPI windows. Set `GENIE_QUALITY=exact` in KWin's environment to use the Dock's exact
-adaptive mesh instead: it is bit-identical to the recovered Dock output, but can show facets when a
-very large window is compressed into a small target.
+By default the funnel is subdivided to roughly 12 device pixels. This is the measured
+performance/quality knee for large and HiDPI windows: 8 px is a little smoother but costs about
+0.9 ms more per frame, while 16 px is slightly cheaper and 24 px is nearly free but closer to the
+exact mesh. Set `GENIE_MESH_PX` in KWin's environment to override the density, or
+`GENIE_QUALITY=exact` for the Dock's exact adaptive mesh (bit-identical to the recovered Dock
+output, but it can show facets when a very large window is compressed into a small target).
 
 ## Provenance
 

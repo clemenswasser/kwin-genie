@@ -128,6 +128,11 @@ GenieEffect::GenieEffect()
     }
     m_debugDump = qEnvironmentVariable("GENIE_DEBUG_DUMP");
     m_exactQuality = qEnvironmentVariable("GENIE_QUALITY") == QLatin1String("exact");
+    bool meshPxOk = false;
+    const double meshPx = qEnvironmentVariable("GENIE_MESH_PX").toDouble(&meshPxOk);
+    if (meshPxOk) {
+        m_meshPx = std::clamp(meshPx, 2.0, 64.0);
+    }
 }
 
 GenieEffect::~GenieEffect() = default;
@@ -276,11 +281,11 @@ void GenieEffect::startAnimation(EffectWindow *w, bool minimizing)
     effects->addRepaintFull();
 }
 
-static genie_quality smoothQuality(double scale)
+static genie_quality smoothQuality(double scale, double mesh_px)
 {
     genie_quality q = genie_quality_exact;
     const double s = std::max(scale, 1.0);
-    q.min_span = 8.0 / s;       // 8 device pixels
+    q.min_span = mesh_px / s;   // device pixels
     q.chord_tolerance = 0.0;    // force the max-segment density
     q.chord_max_span = 0.0;
     q.max_visits = 4096;
@@ -445,7 +450,7 @@ void GenieEffect::apply(EffectWindow *w, int mask, WindowPaintData &data, Window
     const genie_box target = genie_target_rect(t.tile, iconRect, genie_tile_inset(tileSize));
 
     const genie_rect win{frame.x(), frame.y(), frame.width(), frame.height()};
-    const genie_quality quality = m_exactQuality ? genie_quality_exact : smoothQuality(scale);
+    const genie_quality quality = m_exactQuality ? genie_quality_exact : smoothQuality(scale, m_meshPx);
     if (genie_build_mesh_ex(p, win, target, t.direction, &quality, m_mesh.get()) != 0) {
         return;
     }

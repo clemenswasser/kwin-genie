@@ -78,6 +78,7 @@ private:
     int m_debugFrames = 0;
     bool m_debugDumped = false;
     bool m_exactQuality = false;
+    double m_meshPx = 12.0;
     QByteArray m_debugInfo;
 };
 
