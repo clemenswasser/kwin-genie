@@ -1,0 +1,31 @@
+# Maintainer: Clemens Wasser <clemens@wassers.me>
+pkgname=kwin-genie-git
+pkgver=1.0.0
+pkgrel=1
+pkgdesc="macOS-style genie minimize effect for KWin"
+arch=('x86_64' 'aarch64')
+url="https://github.com/clemenswasser/kwin-genie"
+license=('GPL-2.0-or-later')
+depends=('kwin' 'qt6-base' 'kcoreaddons')
+makedepends=('cmake' 'extra-cmake-modules' 'git')
+source=("git+$url.git")
+sha256sums=('SKIP')
+
+pkgver()
+{
+    cd "$srcdir/kwin-genie"
+    printf 'r%s.%s' "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
+}
+
+build()
+{
+    cmake -S "$srcdir/kwin-genie" -B build \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/usr
+    cmake --build build
+}
+
+package()
+{
+    DESTDIR="$pkgdir" cmake --install build
+}
