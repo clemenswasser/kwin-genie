@@ -11,12 +11,32 @@ genieEnabled=true
 magiclampEnabled=false
 squashEnabled=false
 CFG
+qdbus_cmd=$(command -v qdbus6 || command -v qdbus || true)
+geom=${GENIE_TEST_GEOMETRY:-}
+if [ -n "$geom" ]; then
+    IFS=, read -r gx gy gw gh <<EOF
+$geom
+EOF
+    cat > "$tmp/place.js" <<JS
+function place(w) {
+    if (w.caption === "genie-test") {
+        w.frameGeometry = {x: $gx, y: $gy, width: $gw, height: $gh};
+    }
+}
+workspace.windowList().forEach(place);
+workspace.windowAdded.connect(place);
+JS
+fi
 rm -f "$out" "$out.json"
 XDG_CONFIG_HOME="$tmp/config" XDG_RUNTIME_DIR="$tmp/runtime" timeout 40 dbus-run-session -- bash -c "
   KWIN_EFFECTS_FORCE_ANIMATIONS=1 QT_FORCE_STDERR_LOGGING=1 QT_PLUGIN_PATH='$here/build/bin':/usr/lib64/qt6/plugins GENIE_DEBUG_PROGRESS='$p' GENIE_DEBUG_DUMP='$out' GENIE_DEBUG_ICON='$icon' \
     KWIN_COMPOSE=O2ES kwin_wayland --virtual --width ${size%x*} --height ${size#*x} --socket wayland-genie > '$tmp/kwin.log' 2>&1 &
   kwin=\$!
   for i in \$(seq 50); do [ -S '$tmp/runtime/wayland-genie' ] && break; sleep 0.1; done
+  if [ -n '$geom' ] && [ -n '$qdbus_cmd' ]; then
+    for i in \$(seq 50); do '$qdbus_cmd' org.kde.KWin /Scripting org.kde.kwin.Scripting.loadScript '$tmp/place.js' place >/dev/null 2>&1 && break; sleep 0.1; done
+    '$qdbus_cmd' org.kde.KWin /Scripting org.kde.kwin.Scripting.start >/dev/null 2>&1 || true
+  fi
   if [ '$scale' != 1 ]; then WAYLAND_DISPLAY=wayland-genie kscreen-doctor output.1.scale.$scale > '$tmp/kscreen.log' 2>&1; sleep 0.5; fi
   WAYLAND_DISPLAY=wayland-genie QT_QPA_PLATFORM=wayland '$here/build/bin/genie_test_client' '$here/tests/pattern.png' 1200 ${GENIE_TEST_BG:-} > '$tmp/client.log' 2>&1 &
   client=\$!

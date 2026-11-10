@@ -40,7 +40,19 @@ The mesh and shadow algorithm are a reverse-engineered reimplementation; see
 ## Tests
 
 ```sh
-tests/target_matrix.sh
+cmake --build build
+ctest --test-dir build --output-on-failure
 ```
 
-Runs an isolated headless KWin; it does not affect the running session.
+- `genie_mesh` checks the mesh generator against 40 golden frames covering all four
+  directions, normal and overlapping targets, and the overlap lift/slide phase.
+  It also checks the target-rect and tile-inset formulas.
+- `genie_shadow` checks the shadow mesh against 70 vectors recorded from the live
+  macOS 26.7.2 SkyLight path.
+- `genie_timeline` checks the KWin `TimeLine` forward/backward and interruption
+  contract used by minimize and restore.
+- `genie_target_matrix` checks the target position, size and direction for bottom,
+  top, left, right and wide-label panels.
+- `genie_direction_matrix` checks direction selection for normal windows and for
+  windows that extend far below/above a panel. These run an isolated headless KWin;
+  they do not affect the running session.

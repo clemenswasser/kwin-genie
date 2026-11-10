@@ -24,6 +24,33 @@ add_subdirectory(src)
 
 option(BUILD_TESTING "Build the test client" ON)
 if(BUILD_TESTING)
+    enable_testing()
+
     add_executable(genie_test_client tests/client.cpp)
     target_link_libraries(genie_test_client Qt6::Widgets)
+
+    add_executable(genie_mesh_test tests/mesh_test.c src/genie.c)
+    target_include_directories(genie_mesh_test PRIVATE src)
+    target_compile_options(genie_mesh_test PRIVATE -ffp-contract=off)
+    target_link_libraries(genie_mesh_test PRIVATE m)
+    add_test(NAME genie_mesh COMMAND genie_mesh_test)
+
+    add_executable(genie_shadow_test tests/shadow_test.c src/genie.c)
+    target_include_directories(genie_shadow_test PRIVATE src)
+    target_compile_options(genie_shadow_test PRIVATE -ffp-contract=off)
+    target_link_libraries(genie_shadow_test PRIVATE m)
+    add_test(NAME genie_shadow
+        COMMAND genie_shadow_test ${CMAKE_CURRENT_SOURCE_DIR}/tests/shadow_frames.txt)
+
+    add_executable(genie_timeline_test tests/timeline_test.cpp)
+    target_link_libraries(genie_timeline_test PRIVATE KWin::kwin Qt6::Core)
+    add_test(NAME genie_timeline COMMAND genie_timeline_test)
+
+    add_test(NAME genie_target_matrix
+        COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests/target_matrix.sh)
+    set_tests_properties(genie_target_matrix PROPERTIES TIMEOUT 300)
+
+    add_test(NAME genie_direction_matrix
+        COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests/direction_matrix.sh)
+    set_tests_properties(genie_direction_matrix PROPERTIES TIMEOUT 300)
 endif()
