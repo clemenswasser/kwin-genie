@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container: fedora:45
+    env:
+      LIBGL_ALWAYS_SOFTWARE: "1"
+      GALLIUM_DRIVER: llvmpipe
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          dnf -y install \
+            cmake gcc gcc-c++ make git \
+            extra-cmake-modules kwin-devel kwin \
+            qt6-qtbase-devel qt6-qttools \
+            kf6-kcoreaddons-devel kf6-kconfig-devel \
+            kf6-kconfigwidgets-devel kf6-kcmutils-devel \
+            dbus-tools appstream python3 \
+            mesa-dri-drivers mesa-libEGL mesa-libGL libglvnd-egl libglvnd-glx
+
+      - name: Configure
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build -j$(nproc)
+
+      - name: Test
+        run: ctest --test-dir build --output-on-failure

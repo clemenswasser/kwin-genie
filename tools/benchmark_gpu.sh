@@ -41,7 +41,7 @@ for f in "$so" "$client"; do
 done
 command -v kwin_wayland >/dev/null || { echo "kwin_wayland not found" >&2; exit 1; }
 command -v dbus-run-session >/dev/null || { echo "dbus-run-session not found" >&2; exit 1; }
-qdbus_cmd=$(command -v qdbus6 || command -v qdbus || true)
+qdbus_cmd=$(command -v qdbus6 || command -v qdbus-qt6 || command -v qdbus || true)
 [ -n "$qdbus_cmd" ] || { echo "qdbus not found" >&2; exit 1; }
 magick_cmd=$(command -v magick || command -v convert || true)
 [ -n "$magick_cmd" ] || { echo "ImageMagick (magick/convert) not found" >&2; exit 1; }
