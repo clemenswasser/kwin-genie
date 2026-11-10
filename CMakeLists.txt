@@ -16,9 +16,8 @@ include(KDECompilerSettings NO_POLICY_SCOPE)
 include(ECMQtDeclareLoggingCategory)
 
 find_package(Qt6 ${QT_MIN_VERSION} REQUIRED COMPONENTS Core Gui DBus Widgets Quick)
-find_package(KF6 ${KF_MIN_VERSION} REQUIRED COMPONENTS CoreAddons Config ConfigWidgets KCMUtils)
+find_package(KF6 ${KF_MIN_VERSION} REQUIRED COMPONENTS CoreAddons)
 find_package(KWin 6.8 REQUIRED)
-find_package(KWinDBusInterface CONFIG REQUIRED)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)

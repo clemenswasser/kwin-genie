@@ -13,11 +13,6 @@ cat > "$tmp/config/kwinrc" <<CFG
 genieEnabled=true
 magiclampEnabled=false
 squashEnabled=false
-
-[Effect-Genie]
-MeshPx=${GENIE_TEST_MESH_PX:-12}
-Exact=${GENIE_TEST_EXACT:-false}
-Duration=${GENIE_TEST_DURATION:-500}
 CFG
 qdbus_cmd=$(command -v qdbus6 || command -v qdbus-qt6 || command -v qdbus || true)
 geom=${GENIE_TEST_GEOMETRY:-}

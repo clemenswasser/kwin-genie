@@ -1,7 +1,6 @@
 // SPDX-FileCopyrightText: 2026 Clemens Wasser
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "genieeffect.h"
-#include "genieconfig.h"
 
 #include "core/output.h"
 #include "core/pixelgrid.h"
@@ -149,10 +148,9 @@ bool GenieEffect::supported()
 
 void GenieEffect::reconfigure(ReconfigureFlags)
 {
-    GenieConfig::self()->load();
-    m_duration = animationTime(std::chrono::milliseconds(GenieConfig::duration()));
-    m_meshPx = GenieConfig::meshPx();
-    m_exactQuality = GenieConfig::exact();
+    m_duration = animationTime(std::chrono::milliseconds(int(GENIE_DURATION * 1000)));
+    m_meshPx = 12.0;
+    m_exactQuality = false;
 }
 
 void GenieEffect::prePaintScreen(ScreenPrePaintData &data)

@@ -20,8 +20,7 @@ jobs:
             cmake gcc gcc-c++ make git \
             extra-cmake-modules kwin-devel kwin \
             qt6-qtbase-devel qt6-qttools \
-            kf6-kcoreaddons-devel kf6-kconfig-devel \
-            kf6-kconfigwidgets-devel kf6-kcmutils-devel \
+            kf6-kcoreaddons-devel \
             dbus-tools appstream python3 libepoxy-devel \
             mesa-dri-drivers mesa-libEGL mesa-libGL libglvnd-egl libglvnd-glx
 

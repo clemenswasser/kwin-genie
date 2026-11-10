@@ -12,8 +12,7 @@ hold **Shift** for 10× slow motion.
 
 ## Build
 
-Needs `kwin-devel` (6.8, including `KWinDBusInterface`), `extra-cmake-modules`, Qt 6 and KF6
-CoreAddons/Config/ConfigWidgets/KCMUtils development packages.
+Needs `kwin-devel` (6.8), `extra-cmake-modules`, Qt 6 and KF6 CoreAddons development packages.
 
 ```sh
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
@@ -28,13 +27,18 @@ file name.
 
 ## Mesh quality
 
-By default the funnel is subdivided to roughly 12 device pixels. This is the measured
-performance/quality knee for large and HiDPI windows: 8 px is a little smoother but costs about
-0.9 ms more per frame, while 16 px is slightly cheaper and 24 px is nearly free but closer to the
-exact mesh. These settings are available in **System Settings → Animations → Window minimize →
-Genie**. For testing, `GENIE_MESH_PX` and `GENIE_QUALITY=exact` can override the configured values
-in KWin's environment; the exact mesh is bit-identical to the recovered Dock output, but it can show
-facets when a very large window is compressed into a small target.
+The effect intentionally has no per-effect settings. It uses a fixed **12 device-pixel** smooth
+mesh, the measured performance/quality knee for large and HiDPI windows: 8 px is a little smoother
+but costs about 0.9 ms more per frame, while 16 px is slightly cheaper and 24 px is nearly free but
+closer to the exact mesh. The test/benchmark harness can override the density with `GENIE_MESH_PX`;
+`GENIE_QUALITY=exact` selects the bit-identical Dock mesh for comparison. Normal users do not need
+either override.
+
+## Timing
+
+The animation base is **500 ms**, matching the macOS Dock at KDE's default animation speed.
+KWin's system-wide animation speed scales it, so the effect follows the same setting as the rest of
+the desktop. Hold **Shift** for 10× slow motion.
 
 ## Provenance
 
