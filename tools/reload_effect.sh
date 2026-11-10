@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Clemens Wasser
+# SPDX-License-Identifier: GPL-2.0-or-later
 # Install the freshly built effect under a new plugin id and activate it in the running KWin.
 set -euo pipefail
 here=$(cd "$(dirname "$0")/.." && pwd)

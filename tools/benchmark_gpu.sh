@@ -1,4 +1,6 @@
 #!/bin/bash
+# SPDX-FileCopyrightText: 2026 Clemens Wasser
+# SPDX-License-Identifier: GPL-2.0-or-later
 # GPU frame-time benchmark for the genie effect in an isolated headless KWin.
 #
 # usage: tools/benchmark_gpu.sh [--out DIR] [--reps N] [--p LIST] [--sizes LIST] [--seconds N]

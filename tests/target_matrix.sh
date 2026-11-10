@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Clemens Wasser
+# SPDX-License-Identifier: GPL-2.0-or-later
 set -u
 here=$(cd "$(dirname "$0")/.." && pwd)
 out=${TMPDIR:-/tmp}/genie-target-matrix

@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Clemens Wasser
+// SPDX-License-Identifier: GPL-2.0-or-later
 /* genie_build_shadow_mesh vs. SkyLight _MatchRectToMeshWithTextureRect
  * (vectors recorded from macOS 26.7.2). */
 #include "genie.h"

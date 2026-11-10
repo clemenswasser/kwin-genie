@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-FileCopyrightText: 2026 Clemens Wasser
+# SPDX-License-Identifier: GPL-2.0-or-later
 """Parse the CSV files produced by tools/benchmark_gpu.sh.
 
 usage: tools/benchmark_parse.py [OUTDIR]

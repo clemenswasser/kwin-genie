@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Clemens Wasser
+// SPDX-License-Identifier: GPL-2.0-or-later
 #ifndef GENIE_H
 #define GENIE_H
 

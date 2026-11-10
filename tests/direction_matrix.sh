@@ -1,4 +1,6 @@
 #!/bin/bash
+# SPDX-FileCopyrightText: 2026 Clemens Wasser
+# SPDX-License-Identifier: GPL-2.0-or-later
 # Direction-selection regression matrix.
 #
 # The effect must choose the same side as the Dock, based on the window edge

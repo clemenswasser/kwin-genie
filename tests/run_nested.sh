@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Clemens Wasser
+# SPDX-License-Identifier: GPL-2.0-or-later
 # Render one frozen genie frame in an isolated, headless KWin (virtual backend) and dump it.
 # usage: tests/run_nested.sh OUT.png PROGRESS [ICON x,y,w,h (logical)] [SCREEN WxH (device px)] [SCALE]
 set -u

@@ -1,3 +1,6 @@
+/* SPDX-FileCopyrightText: 2026 Clemens Wasser
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ */
     {"down-normal", 0.00f, 0x4ddf1acd533c2c13ULL},
     {"down-normal", 0.25f, 0x8c7def0a21c321c2ULL},
     {"down-normal", 0.50f, 0x6f83de536fc734f5ULL},

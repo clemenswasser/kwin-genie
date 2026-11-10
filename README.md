@@ -72,3 +72,8 @@ tools/benchmark_parse.py /tmp/genie-benchmark
 
 Use `--p 0.1,0.5,0.9` for the full animation and `--sizes 8,12,16,24,32` to compare
 mesh densities. This is a manual, GPU-specific benchmark, not part of CTest.
+
+## License
+
+GPL-2.0-or-later. See [LICENSE](LICENSE). This is a third-party KWin effect and is not
+affiliated with or endorsed by Apple.

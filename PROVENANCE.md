@@ -9,3 +9,9 @@ shadow vectors captured from the live macOS Dock and SkyLight; these are behavio
 not Apple binaries or decompiler output.
 
 The KWin effect integration, rendering, timing and tests are original work.
+
+## License
+
+The original code in this repository is licensed under GPL-2.0-or-later; see
+[LICENSE](LICENSE). The reverse-engineered algorithm description and recorded test vectors are
+provided for interoperability and regression testing.
