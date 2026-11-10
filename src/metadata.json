@@ -5,7 +5,7 @@
         "EnabledByDefault": false,
         "License": "GPL-2.0-or-later",
         "Name": "Genie",
-        "Version": "1.1"
+        "Version": "1.1.1"
     },
     "org.kde.kwin.effect": {
         "exclusiveGroup": "minimize"
