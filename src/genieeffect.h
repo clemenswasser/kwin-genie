@@ -21,6 +21,7 @@ struct GenieAnimation {
     EffectWindowVisibleRef visibleRef;
     TimeLine timeLine;
     int heldFrames = 0;
+    bool scaleFallback = false;
 };
 
 class GenieEffect : public OffscreenEffect
@@ -55,9 +56,23 @@ protected:
     void apply(EffectWindow *window, int mask, WindowPaintData &data, WindowQuadList &quads) override;
 
 private:
+    struct FrameInfo {
+        RectF frame;
+        RectF iconGeometry;
+        RectF panelGeometry;
+        RectF screen;
+        Target target;
+        genie_box targetRect;
+        double scale = 1.0;
+        bool valid = false;
+    };
+
     void slotWindowAdded(EffectWindow *w);
     void slotWindowDeleted(EffectWindow *w);
     void startAnimation(EffectWindow *w, bool minimizing);
+    FrameInfo frameInfoFor(EffectWindow *w) const;
+    void applyScaleFallback(WindowPaintData &data, const FrameInfo &info, double progress) const;
+    void updateDebugInfo(const FrameInfo &info, double progress, int cols, int rows, bool scaleFallback);
     GLShader *projectiveShader();
     RectF panelGeometryFor(const QPointF &anchor) const;
 

@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2026 Clemens Wasser
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "genieeffect.h"
+#include "genie_scale.h"
 #include "genie_timeline.h"
 
 #include "core/output.h"
@@ -48,6 +49,7 @@ void main()
 )";
 
 static constexpr int s_maxQuads = 1024;
+static constexpr double s_scaleFallbackSize = 5.0;
 
 static void caCornerWeights(const float x[4], const float y[4], float w[4])
 {
@@ -222,69 +224,6 @@ void GenieEffect::slotWindowDeleted(EffectWindow *w)
     m_animations.remove(w);
 }
 
-void GenieEffect::startAnimation(EffectWindow *w, bool minimizing)
-{
-    if (effects->activeFullScreenEffect()) {
-        return;
-    }
-    GenieAnimation &animation = m_animations[w];
-    animation.heldFrames = 0;
-    if (animation.timeLine.running()) {
-        animation.timeLine.toggleDirection();
-    } else {
-        animation.visibleRef = EffectWindowVisibleRef(w, EffectWindow::PAINT_DISABLED_BY_MINIMIZE);
-        const bool slow = input() && (input()->keyboardModifiers() & Qt::ShiftModifier);
-        startGenieTimeline(animation.timeLine, minimizing, m_duration, slow);
-    }
-    redirect(w);
-    if (GLShader *shader = projectiveShader()) {
-        setShader(w, shader);
-    }
-    if (!m_debugDump.isEmpty() && m_debugInfo.isEmpty()) {
-        const double scale = w->screen() ? w->screen()->scale() : 1.0;
-        const RectF frame = snapToPixels(w->frameGeometry(), scale);
-        const RectF iconGeometry = m_debugIcon.isValid() ? m_debugIcon : w->iconGeometry();
-        const QPointF anchor = (iconGeometry.isValid() && !iconGeometry.isEmpty()) ? iconGeometry.center() : frame.center();
-        const RectF panelGeometry = panelGeometryFor(anchor);
-        LogicalOutput *entryScreen = nullptr;
-        if (panelGeometry.isValid() && !panelGeometry.isEmpty()) {
-            entryScreen = effects->screenAt(panelGeometry.center().toPoint());
-        } else if (iconGeometry.isValid() && !iconGeometry.isEmpty()) {
-            entryScreen = effects->screenAt(iconGeometry.center().toPoint());
-        }
-        LogicalOutput *screen = entryScreen ? entryScreen : w->screen();
-        const Target t = computeTarget(frame, iconGeometry, panelGeometry, screen->geometryF());
-        const genie_box iconRect = genie_icon_rect(frame.width(), frame.height());
-        const genie_box target = genie_target_rect(t.tile, iconRect, genie_tile_inset(t.tile.x1 - t.tile.x0));
-        const float p = m_debugProgress >= 0 ? float(m_debugProgress) : float(animation.timeLine.value());
-        m_debugInfo = QStringLiteral(
-                          "{\"p\": %1, \"frame\": [%2, %3, %4, %5], \"target\": [%6, %7, %8, %9], \"dir\": %10, "
-                          "\"scale\": %11, \"mesh\": [0, 0], \"icon\": [%12, %13, %14, %15], "
-                          "\"panel\": [%16, %17, %18, %19]}")
-                          .arg(p)
-                          .arg(frame.x())
-                          .arg(frame.y())
-                          .arg(frame.width())
-                          .arg(frame.height())
-                          .arg(target.x0)
-                          .arg(target.y0)
-                          .arg(target.x1)
-                          .arg(target.y1)
-                          .arg(t.direction)
-                          .arg(scale)
-                          .arg(iconGeometry.x())
-                          .arg(iconGeometry.y())
-                          .arg(iconGeometry.width())
-                          .arg(iconGeometry.height())
-                          .arg(panelGeometry.x())
-                          .arg(panelGeometry.y())
-                          .arg(panelGeometry.width())
-                          .arg(panelGeometry.height())
-                          .toUtf8();
-    }
-    effects->addRepaintFull();
-}
-
 static genie_quality smoothQuality(double scale, double mesh_px)
 {
     genie_quality q = genie_quality_exact;
@@ -295,6 +234,121 @@ static genie_quality smoothQuality(double scale, double mesh_px)
     q.max_visits = 4096;
     q.max_rows = GENIE_MAX_ROWS;
     return q;
+}
+
+GenieEffect::FrameInfo GenieEffect::frameInfoFor(EffectWindow *w) const
+{
+    FrameInfo info;
+    info.scale = w->screen() ? w->screen()->scale() : 1.0;
+    info.frame = snapToPixels(w->frameGeometry(), info.scale);
+    info.iconGeometry = m_debugIcon.isValid() ? m_debugIcon : w->iconGeometry();
+    const QPointF anchor = (info.iconGeometry.isValid() && !info.iconGeometry.isEmpty()) ? info.iconGeometry.center() : info.frame.center();
+    info.panelGeometry = panelGeometryFor(anchor);
+
+    LogicalOutput *entryScreen = nullptr;
+    if (info.panelGeometry.isValid() && !info.panelGeometry.isEmpty()) {
+        entryScreen = effects->screenAt(info.panelGeometry.center().toPoint());
+    } else if (info.iconGeometry.isValid() && !info.iconGeometry.isEmpty()) {
+        entryScreen = effects->screenAt(info.iconGeometry.center().toPoint());
+    }
+    LogicalOutput *screen = entryScreen ? entryScreen : w->screen();
+    if (!screen || info.frame.isEmpty()) {
+        return info;
+    }
+
+    info.screen = screen->geometryF();
+    info.target = computeTarget(info.frame, info.iconGeometry, info.panelGeometry, info.screen);
+    const genie_box iconRect = genie_icon_rect(info.frame.width(), info.frame.height());
+    const float tileSize = info.target.tile.x1 - info.target.tile.x0;
+    info.targetRect = genie_target_rect(info.target.tile, iconRect, genie_tile_inset(tileSize));
+    info.valid = true;
+    return info;
+}
+
+void GenieEffect::applyScaleFallback(WindowPaintData &data, const FrameInfo &info, double progress) const
+{
+    const GenieScale scale = genieScaleTransform(info.frame.x(), info.frame.y(), info.frame.width(), info.frame.height(),
+                                                 info.targetRect.x0, info.targetRect.y0, info.targetRect.x1, info.targetRect.y1,
+                                                 progress);
+    data.setXScale(data.xScale() * scale.xScale);
+    data.setYScale(data.yScale() * scale.yScale);
+    data.translate(scale.xTranslate, scale.yTranslate);
+}
+
+void GenieEffect::updateDebugInfo(const FrameInfo &info, double progress, int cols, int rows, bool scaleFallback)
+{
+    if (m_debugDump.isEmpty()) {
+        return;
+    }
+    m_debugInfo = QStringLiteral(
+                      "{\"p\": %1, \"frame\": [%2, %3, %4, %5], \"target\": [%6, %7, %8, %9], \"dir\": %10, "
+                      "\"scale\": %11, \"mesh\": [%12, %13], \"icon\": [%14, %15, %16, %17], "
+                      "\"panel\": [%18, %19, %20, %21], \"mode\": \"%22\"}")
+                      .arg(progress)
+                      .arg(info.frame.x())
+                      .arg(info.frame.y())
+                      .arg(info.frame.width())
+                      .arg(info.frame.height())
+                      .arg(info.targetRect.x0)
+                      .arg(info.targetRect.y0)
+                      .arg(info.targetRect.x1)
+                      .arg(info.targetRect.y1)
+                      .arg(info.target.direction)
+                      .arg(info.scale)
+                      .arg(cols)
+                      .arg(rows)
+                      .arg(info.iconGeometry.x())
+                      .arg(info.iconGeometry.y())
+                      .arg(info.iconGeometry.width())
+                      .arg(info.iconGeometry.height())
+                      .arg(info.panelGeometry.x())
+                      .arg(info.panelGeometry.y())
+                      .arg(info.panelGeometry.width())
+                      .arg(info.panelGeometry.height())
+                      .arg(scaleFallback ? QStringLiteral("scale") : QStringLiteral("genie"))
+                      .toUtf8();
+}
+
+void GenieEffect::startAnimation(EffectWindow *w, bool minimizing)
+{
+    if (effects->activeFullScreenEffect()) {
+        return;
+    }
+    GenieAnimation &animation = m_animations[w];
+    animation.heldFrames = 0;
+
+    const FrameInfo info = frameInfoFor(w);
+    if (animation.timeLine.running()) {
+        animation.timeLine.toggleDirection();
+    } else {
+        animation.visibleRef = EffectWindowVisibleRef(w, EffectWindow::PAINT_DISABLED_BY_MINIMIZE);
+        // Match the Dock: windows narrower or shorter than 5 pt use the scale
+        // effect, and any mesh the generator rejects falls back to it too.
+        bool scaleFallback = info.frame.width() < s_scaleFallbackSize || info.frame.height() < s_scaleFallbackSize;
+        if (!scaleFallback && info.valid) {
+            const genie_rect win{info.frame.x(), info.frame.y(), info.frame.width(), info.frame.height()};
+            const genie_quality quality = m_exactQuality ? genie_quality_exact : smoothQuality(info.scale, m_meshPx);
+            scaleFallback = genie_build_mesh_ex(0.0f, win, info.targetRect, info.target.direction, &quality, m_mesh.get()) != 0;
+        }
+        animation.scaleFallback = scaleFallback;
+
+        const bool slow = input() && (input()->keyboardModifiers() & Qt::ShiftModifier);
+        const std::chrono::milliseconds duration = scaleFallback ? std::max(m_duration / 2, 1ms) : m_duration;
+        startGenieTimeline(animation.timeLine, minimizing, duration, slow);
+    }
+    redirect(w);
+    if (animation.scaleFallback) {
+        // The projective shader multiplies vertices by genie mesh weights;
+        // the scale fallback does not have a mesh, so use the default shader.
+        setShader(w, nullptr);
+    } else if (GLShader *shader = projectiveShader()) {
+        setShader(w, shader);
+    }
+    if (m_debugInfo.isEmpty() && info.valid) {
+        const double p = m_debugProgress >= 0 ? m_debugProgress : animation.timeLine.value();
+        updateDebugInfo(info, p, 0, 0, animation.scaleFallback);
+    }
+    effects->addRepaintFull();
 }
 
 static double rectPointDistance(const RectF &rect, const QPointF &point)
@@ -436,64 +490,35 @@ GenieEffect::Target GenieEffect::computeTarget(const RectF &frame, const RectF &
 void GenieEffect::apply(EffectWindow *w, int mask, WindowPaintData &data, WindowQuadList &quads)
 {
     Q_UNUSED(mask)
-    Q_UNUSED(data)
-    const auto it = m_animations.constFind(w);
-    if (it == m_animations.constEnd() || quads.isEmpty()) {
+    auto it = m_animations.find(w);
+    if (it == m_animations.end() || quads.isEmpty()) {
         return;
     }
-    const float p = m_debugProgress >= 0 ? float(m_debugProgress) : float(it->timeLine.value());
+    const double p = m_debugProgress >= 0 ? m_debugProgress : double(it->timeLine.value());
 
-    const double scale = w->screen() ? w->screen()->scale() : 1.0;
-    const RectF frame = snapToPixels(w->frameGeometry(), scale);
-    const RectF iconGeometry = m_debugIcon.isValid() ? m_debugIcon : w->iconGeometry();
-    const QPointF anchor = (iconGeometry.isValid() && !iconGeometry.isEmpty()) ? iconGeometry.center() : frame.center();
-    const RectF panelGeometry = panelGeometryFor(anchor);
-    LogicalOutput *entryScreen = nullptr;
-    if (panelGeometry.isValid() && !panelGeometry.isEmpty()) {
-        entryScreen = effects->screenAt(panelGeometry.center().toPoint());
-    } else if (iconGeometry.isValid() && !iconGeometry.isEmpty()) {
-        entryScreen = effects->screenAt(iconGeometry.center().toPoint());
-    }
-    LogicalOutput *screen = entryScreen ? entryScreen : w->screen();
-    const Target t = computeTarget(frame, iconGeometry, panelGeometry, screen->geometryF());
-
-    const genie_box iconRect = genie_icon_rect(frame.width(), frame.height());
-    const float tileSize = t.tile.x1 - t.tile.x0;
-    const genie_box target = genie_target_rect(t.tile, iconRect, genie_tile_inset(tileSize));
-
-    const genie_rect win{frame.x(), frame.y(), frame.width(), frame.height()};
-    const genie_quality quality = m_exactQuality ? genie_quality_exact : smoothQuality(scale, m_meshPx);
-    if (genie_build_mesh_ex(p, win, target, t.direction, &quality, m_mesh.get()) != 0) {
+    const FrameInfo info = frameInfoFor(w);
+    if (!info.valid) {
         return;
     }
-    if (!m_debugDump.isEmpty()) {
-        m_debugInfo = QStringLiteral(
-                          "{\"p\": %1, \"frame\": [%2, %3, %4, %5], \"target\": [%6, %7, %8, %9], \"dir\": %10, "
-                          "\"scale\": %11, \"mesh\": [%12, %13], \"icon\": [%14, %15, %16, %17], "
-                          "\"panel\": [%18, %19, %20, %21]}")
-                          .arg(p)
-                          .arg(frame.x())
-                          .arg(frame.y())
-                          .arg(frame.width())
-                          .arg(frame.height())
-                          .arg(target.x0)
-                          .arg(target.y0)
-                          .arg(target.x1)
-                          .arg(target.y1)
-                          .arg(t.direction)
-                          .arg(scale)
-                          .arg(m_mesh->cols)
-                          .arg(m_mesh->rows)
-                          .arg(iconGeometry.x())
-                          .arg(iconGeometry.y())
-                          .arg(iconGeometry.width())
-                          .arg(iconGeometry.height())
-                          .arg(panelGeometry.x())
-                          .arg(panelGeometry.y())
-                          .arg(panelGeometry.width())
-                          .arg(panelGeometry.height())
-                          .toUtf8();
+    if (it->scaleFallback) {
+        setShader(w, nullptr);
+        applyScaleFallback(data, info, p);
+        updateDebugInfo(info, p, 0, 0, true);
+        return;
     }
+
+    const genie_rect win{info.frame.x(), info.frame.y(), info.frame.width(), info.frame.height()};
+    const genie_quality quality = m_exactQuality ? genie_quality_exact : smoothQuality(info.scale, m_meshPx);
+    if (genie_build_mesh_ex(float(p), win, info.targetRect, info.target.direction, &quality, m_mesh.get()) != 0) {
+        // Geometry can change while an animation runs. Switch to the scale
+        // fallback instead of leaving the window frozen.
+        it->scaleFallback = true;
+        setShader(w, nullptr);
+        applyScaleFallback(data, info, p);
+        updateDebugInfo(info, p, 0, 0, true);
+        return;
+    }
+    updateDebugInfo(info, p, m_mesh->cols, m_mesh->rows, false);
 
     const WindowQuad &src = quads.first();
     const double ex = src[0].x(), ey = src[0].y();
@@ -520,7 +545,7 @@ void GenieEffect::apply(EffectWindow *w, int mask, WindowPaintData &data, Window
         WindowQuad q;
         float x[4], y[4], wgt[4];
         for (int i = 0; i < 4; ++i) {
-            q[i] = WindowVertex(double(k[i]->x) - frame.x(), double(k[i]->y) - frame.y(), texU(k[i]->u), texV(k[i]->v));
+            q[i] = WindowVertex(double(k[i]->x) - info.frame.x(), double(k[i]->y) - info.frame.y(), texU(k[i]->u), texV(k[i]->v));
             x[i] = k[i]->x;
             y[i] = k[i]->y;
         }
@@ -553,11 +578,11 @@ void GenieEffect::apply(EffectWindow *w, int mask, WindowPaintData &data, Window
             glUniform1fv(m_clampLocation, count, m_clamp.data());
         }
 
-        const double texW = ew * scale, texH = eh * scale;
+        const double texW = ew * info.scale, texH = eh * info.scale;
         const float hu = float(0.5 / texW * tdu), hv = float(0.5 / texH * tdv);
         if (m_texMinLocation >= 0 && m_texMaxLocation >= 0) {
             glUniform2f(m_texMinLocation, float(texU(0.0f)) + hu, float(texV(0.0f)) + hv);
-            glUniform2f(m_texMaxLocation, float(texU(float(frame.width()))) - hu, float(texV(float(frame.height()))) - hv);
+            glUniform2f(m_texMaxLocation, float(texU(float(info.frame.width()))) - hu, float(texV(float(info.frame.height()))) - hv);
         }
     }
 }

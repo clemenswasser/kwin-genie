@@ -49,6 +49,10 @@ if(BUILD_TESTING)
     target_link_libraries(genie_timeline_test PRIVATE KWin::kwin Qt6::Core)
     add_test(NAME genie_timeline COMMAND genie_timeline_test)
 
+    add_executable(genie_scale_test tests/scale_test.cpp)
+    target_include_directories(genie_scale_test PRIVATE src)
+    add_test(NAME genie_scale_transform COMMAND genie_scale_test)
+
     add_test(NAME genie_target_matrix
         COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests/target_matrix.sh)
     set_tests_properties(genie_target_matrix PROPERTIES TIMEOUT 300)
@@ -72,4 +76,8 @@ if(BUILD_TESTING)
     add_test(NAME genie_synth_matrix
         COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests/synth_matrix.sh)
     set_tests_properties(genie_synth_matrix PROPERTIES TIMEOUT 300)
+
+    add_test(NAME genie_tiny_matrix
+        COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests/tiny_matrix.sh)
+    set_tests_properties(genie_tiny_matrix PROPERTIES TIMEOUT 300)
 endif()
