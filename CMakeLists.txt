@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 cmake_minimum_required(VERSION 3.22)
-project(kwin-effect-genie VERSION 1.1.1 LANGUAGES C CXX)
+project(kwin-effect-genie VERSION 1.1.2 LANGUAGES C CXX)
 
 set(QT_MIN_VERSION "6.8.0")
 set(KF_MIN_VERSION "6.10.0")
