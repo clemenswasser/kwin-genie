@@ -12,9 +12,19 @@ enum {
     GENIE_DIR_LEFT = 4,
 };
 
-#define GENIE_MAX_ROWS 400
+#define GENIE_MAX_ROWS 1024
 #define GENIE_MAX_VERTICES (2 * GENIE_MAX_ROWS)
 #define GENIE_DURATION 0.5
+
+typedef struct {
+    double min_span;        /* stop subdividing below this span (logical px) */
+    double chord_tolerance; /* midpoint-to-chord tolerance (logical px) */
+    double chord_max_span;  /* only use the chord test below this span; 0 disables it */
+    int max_visits;         /* subdivision visit budget */
+    int max_rows;           /* hard row cap, <= GENIE_MAX_ROWS */
+} genie_quality;
+
+extern const genie_quality genie_quality_exact;
 
 typedef struct {
     double x, y, w, h;
@@ -32,6 +42,8 @@ typedef struct {
 } genie_mesh;
 
 int genie_build_mesh(float p, genie_rect window, genie_box target, int direction, genie_mesh *out);
+int genie_build_mesh_ex(float p, genie_rect window, genie_box target, int direction,
+                        const genie_quality *quality, genie_mesh *out);
 
 genie_box genie_icon_rect(double window_w, double window_h);
 

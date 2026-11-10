@@ -44,7 +44,7 @@ void main()
 }
 )";
 
-static constexpr int s_maxQuads = 256;
+static constexpr int s_maxQuads = 1024;
 
 static void caCornerWeights(const float x[4], const float y[4], float w[4])
 {
@@ -101,6 +101,8 @@ GenieEffect::GenieEffect()
     , m_shadow(std::make_unique<genie_shadow_mesh>())
 {
     reconfigure(ReconfigureAll);
+    m_weights.reserve(4 * s_maxQuads);
+    m_clamp.reserve(s_maxQuads);
     connect(effects, &EffectsHandler::windowAdded, this, &GenieEffect::slotWindowAdded);
     connect(effects, &EffectsHandler::windowDeleted, this, &GenieEffect::slotWindowDeleted);
 
@@ -125,6 +127,7 @@ GenieEffect::GenieEffect()
         m_debugPanel = RectF(panel[0].toDouble(), panel[1].toDouble(), panel[2].toDouble(), panel[3].toDouble());
     }
     m_debugDump = qEnvironmentVariable("GENIE_DEBUG_DUMP");
+    m_exactQuality = qEnvironmentVariable("GENIE_QUALITY") == QLatin1String("exact");
 }
 
 GenieEffect::~GenieEffect() = default;
@@ -271,6 +274,18 @@ void GenieEffect::startAnimation(EffectWindow *w, bool minimizing)
                           .toUtf8();
     }
     effects->addRepaintFull();
+}
+
+static genie_quality smoothQuality(double scale)
+{
+    genie_quality q = genie_quality_exact;
+    const double s = std::max(scale, 1.0);
+    q.min_span = 8.0 / s;       // 8 device pixels
+    q.chord_tolerance = 0.0;    // force the max-segment density
+    q.chord_max_span = 0.0;
+    q.max_visits = 4096;
+    q.max_rows = GENIE_MAX_ROWS;
+    return q;
 }
 
 static double rectPointDistance(const RectF &rect, const QPointF &point)
@@ -430,7 +445,8 @@ void GenieEffect::apply(EffectWindow *w, int mask, WindowPaintData &data, Window
     const genie_box target = genie_target_rect(t.tile, iconRect, genie_tile_inset(tileSize));
 
     const genie_rect win{frame.x(), frame.y(), frame.width(), frame.height()};
-    if (genie_build_mesh(p, win, target, t.direction, m_mesh.get()) != 0) {
+    const genie_quality quality = m_exactQuality ? genie_quality_exact : smoothQuality(scale);
+    if (genie_build_mesh_ex(p, win, target, t.direction, &quality, m_mesh.get()) != 0) {
         return;
     }
     if (!m_debugDump.isEmpty()) {

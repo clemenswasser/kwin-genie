@@ -77,6 +77,7 @@ private:
     QString m_debugDump;
     int m_debugFrames = 0;
     bool m_debugDumped = false;
+    bool m_exactQuality = false;
     QByteArray m_debugInfo;
 };
 

@@ -9,42 +9,45 @@ static double genie__ease_profile(double y, double base, double len)
     return cos(((y - base) * genie_pi_f) / len) * -0.5 + 0.5;
 }
 
-static int genie__subdivide(double p1, double p2, double base, double L, double R, float *rows, int idx, int len_i, int *counter)
+const genie_quality genie_quality_exact = {8.0, 0.6, 128.0, 64, 400};
+
+static int genie__subdivide(double p1, double p2, double base, double L, double R, float *rows, int idx, int len_i, int *counter, const genie_quality *q)
 {
     double len = (double)len_i;
     double e_end = genie__ease_profile(p2, base, len);
     int total = 0;
-    int ok = *counter < 0x40;
+    int ok = *counter < q->max_visits;
     (*counter)++;
     if (!ok)
         return 0;
     for (;;) {
         double span = fabs(p2 - p1);
-        if (span < 8.0)
+        if (span < q->min_span)
             return total;
         double mid = (p2 + p1) * 0.5;
         double c1 = cos(((p1 - base) * genie_pi_f) / len);
         double em = genie__ease_profile(mid, base, len);
         float xm = (float)(em * L), ym = (float)(em * R);
-        if (span < 128.0) {
+        if (span < q->chord_max_span && q->chord_tolerance > 0.0) {
             double e1 = c1 * -0.5 + 0.5;
             float sl = (float)(L * e1) + (float)(e_end * L);
             float sr = (float)(e1 * R) + (float)(R * e_end);
-            if (fabs((double)sl * 0.5 - (double)xm) < 0.6 && fabs((double)sr * 0.5 - (double)ym) < 0.6)
+            if (fabs((double)sl * 0.5 - (double)xm) < q->chord_tolerance
+                && fabs((double)sr * 0.5 - (double)ym) < q->chord_tolerance)
                 return total;
         }
-        int n = genie__subdivide(p1, mid, base, L, R, rows, idx, len_i, counter);
+        int n = genie__subdivide(p1, mid, base, L, R, rows, idx, len_i, counter, q);
         unsigned at = (unsigned)(idx + n);
-        if (at > 0x4af)
+        if (at > (unsigned)(q->max_rows * 3 - 1))
             return total;
         rows[at] = (float)mid;
         rows[at + 1] = xm;
         rows[at + 2] = ym;
-        if (at > 0x4ac)
+        if (at > (unsigned)(q->max_rows * 3 - 4))
             return total;
         idx = (int)at + 3;
         total += n + 3;
-        ok = *counter < 0x40;
+        ok = *counter < q->max_visits;
         (*counter)++;
         if (!ok)
             return total;
@@ -52,8 +55,27 @@ static int genie__subdivide(double p1, double p2, double base, double L, double 
     }
 }
 
-int genie_build_mesh(float p, genie_rect W, genie_box T, int dir, genie_mesh *out)
+int genie_build_mesh(float p, genie_rect window, genie_box target, int direction, genie_mesh *out)
 {
+    return genie_build_mesh_ex(p, window, target, direction, &genie_quality_exact, out);
+}
+
+int genie_build_mesh_ex(float p, genie_rect W, genie_box T, int dir, const genie_quality *quality, genie_mesh *out)
+{
+    genie_quality q = *quality;
+    if (q.max_rows < 1)
+        q.max_rows = 1;
+    if (q.max_rows > GENIE_MAX_ROWS)
+        q.max_rows = GENIE_MAX_ROWS;
+    if (q.max_visits < 1)
+        q.max_visits = 1;
+    if (q.min_span < 0.0)
+        q.min_span = 0.0;
+    if (q.chord_tolerance < 0.0)
+        q.chord_tolerance = 0.0;
+    if (q.chord_max_span < 0.0)
+        q.chord_max_span = 0.0;
+
     const double wx = W.x, wy = W.y, ww = W.w, wh = W.h;
     const double tx = T.x0, ty = T.y0, tw = (double)(T.x1 - T.x0), th = (double)(T.y1 - T.y0);
     double L0, R0, D = 0.0, A, K, E, S0, F;
@@ -143,13 +165,13 @@ int genie_build_mesh(float p, genie_rect W, genie_box T, int dir, genie_mesh *ou
     }
     double len = (double)len_i;
 
-    float rows[1200 + 8];
+    float rows[GENIE_MAX_ROWS * 3 + 8];
     int counter = 0;
     double el = genie__ease_profile(lead, base, len);
     rows[0] = (float)lead;
     rows[1] = (float)(L * el);
     rows[2] = (float)(el * R);
-    int n = genie__subdivide(lead, trail_c, base, L, R, rows, 3, len_i, &counter);
+    int n = genie__subdivide(lead, trail_c, base, L, R, rows, 3, len_i, &counter, &q);
     double et = genie__ease_profile(trail_c, base, len);
     rows[n + 3] = (float)trail_c;
     rows[n + 4] = (float)(L * et);
@@ -169,8 +191,8 @@ int genie_build_mesh(float p, genie_rect W, genie_box T, int dir, genie_mesh *ou
     }
     int nf = head + n + 3;
     int nrows = nf / 3;
-    if (nrows > GENIE_MAX_ROWS)
-        nrows = GENIE_MAX_ROWS;
+    if (nrows > q.max_rows)
+        nrows = q.max_rows;
 
     const float first = rows[0], last = rows[(nrows - 1) * 3];
     genie_vertex *v = out->v;
